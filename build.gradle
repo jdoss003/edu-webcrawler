@@ -1,0 +1,17 @@
+apply plugin: 'java'
+
+version = "${prog_version}"
+group = "${group_path}"
+archivesBaseName = "${filename_base}"
+
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
+compileJava {
+    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+}
