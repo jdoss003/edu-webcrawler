@@ -15,6 +15,9 @@ local.properties
 .loadpath
 .recommenders
 
+###Random Stuff###
+Lucern/Index/
+
 # Eclipse Core
 .project
 
