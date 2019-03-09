@@ -15,7 +15,8 @@ repositories {
 
 dependencies {
     compile "org.jsoup:jsoup:${jsoup_version}"
-    compile "org.apache.lucene:lucene-core:${lucene_version}"
+    compile "org.apache.lucene:lucene-core:${lucenecore_version}"
+    compile "org.apache.lucene:lucene-queryparser:${luceneqp_version}"
     compile "org.elasticsearch:elasticsearch-core:${elastic_version}"
     compile "org.graphstream:gs-core:${graphstream_version}"
     compile "guru.nidi:graphviz-java:${graphviz_version}"
