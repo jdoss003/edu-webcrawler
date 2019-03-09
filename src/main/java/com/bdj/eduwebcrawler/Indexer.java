@@ -46,15 +46,15 @@ public class Indexer implements AutoCloseable {
         Document doc = new Document();
 
         //add fields to document
-        StringField urlField = new StringField("url", url, Field.Store.YES);
-        doc.add(new TextField("text", text, Field.Store.YES));
+        doc.add(new StringField("url", url, StringField.Store.YES));
+        doc.add(new TextField("text", text, TextField.Store.YES));
 
         for (String temp : parentURLs){
-            doc.add(new StringField("parentURLs", temp, Field.Store.YES));
+            doc.add(new StringField("parentURLs", temp, StringField.Store.YES));
         }
 
         for (String temp : childURLs){
-            doc.add(new StringField("childURLs", temp, Field.Store.YES));
+            doc.add(new StringField("childURLs", temp, StringField.Store.YES));
         }
 
         //add document to index
