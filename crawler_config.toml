@@ -1,0 +1,25 @@
+#optional
+downloaders = 2
+
+#optional
+processors = 4
+
+#optional - Default is unlinited (-1)
+#this or 'maxdatasize' must be set to a positive value
+maxpages = 100
+
+#optional - Default is unlinited (-1)
+#maxredirects = 100
+
+#optional - Default is unlinited (-1)
+#this or 'maxpages' must be set to a positive value
+#size is measured in bytes
+#maxdatasize = 1000000000
+
+#mandatory
+datapath="data/test"
+
+#mandatory
+seedlist = '''
+http://ucr.edu/
+'''
