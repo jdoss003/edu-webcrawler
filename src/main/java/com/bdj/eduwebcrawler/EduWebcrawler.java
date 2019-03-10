@@ -1,10 +1,13 @@
 package com.bdj.eduwebcrawler;
 
 import com.electronwill.nightconfig.core.file.FileConfig;
+import javafx.util.Pair;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,13 +15,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public enum EduWebcrawler
@@ -35,6 +39,7 @@ public enum EduWebcrawler
     private AtomicLong dataSize = new AtomicLong(0L);
 
     private ConcurrentMap<String, String> updated = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, Pair<Long, Long>> hitTimes = new ConcurrentHashMap<>();
 
     EduWebcrawler()
     {
@@ -46,7 +51,6 @@ public enum EduWebcrawler
         downloaders = new QueuedWorkerPool<>("DOWNLOAD", config.getDownloaders(), this::downloader);
         processors = new QueuedWorkerPool<>("PROCESS", config.getProcessors(), this::processor);
 
-        config.getSeedList().stream().map(PageInfo::new).forEach(downloaders::add);
     }
 
     public CrawlerConfig getConfig()
@@ -56,6 +60,8 @@ public enum EduWebcrawler
 
     public void run()
     {
+        config.getSeedList().stream().map(PageInfo::new).forEach(downloaders::add);
+
         scanDataDir();
         downloaders.start();
         processors.start();
@@ -85,7 +91,6 @@ public enum EduWebcrawler
                         System.out.println("Doc count: " + c);
                     }
                 }
-                Thread.sleep(100L);
             }
             catch (Throwable t)
             {
@@ -145,6 +150,7 @@ public enum EduWebcrawler
                     if (maxDepth < 0 || maxDepth > info.getDepth())
                     {
                         Path path = Paths.get(URLUtils.getSavePath(info.getUrl()));
+                        String domain = URLUtils.getDomainName(info.getUrl());
                         String hash = null;
 
                         if (updated.containsKey(path.toString()))
@@ -154,7 +160,7 @@ public enum EduWebcrawler
 
                         if (Files.exists(path))
                         {
-                            hash = Files.lines(Paths.get(path.toString() + ".md5")).collect(Collectors.joining("\n"));
+                            hash = getInfoValue(Paths.get(path.toString() + ".info"), "hash");
                             if (!config.shouldUpdatePages())
                             {
                                 info.setDoc(Jsoup.parse(path.toFile(), StandardCharsets.UTF_8.name()));
@@ -163,8 +169,27 @@ public enum EduWebcrawler
 
                         if (info.getDoc() == null)
                         {
+                            boolean flag;
+                            synchronized(downloaders)
+                            {
+                                flag = canHitServer(domain);
+                                if (flag)
+                                {
+                                    hitTimes.put(domain, new Pair<>(-1L, -1L));
+                                }
+                            }
+
+                            if (!flag)
+                            {
+                                downloaders.add(info);
+                                return;
+                            }
+
+                            long start = System.currentTimeMillis();
                             info.setDoc(Jsoup.parse(Jsoup.connect(info.getUrl()).get().html()));
-                            Thread.sleep(500L);
+                            long end = System.currentTimeMillis();
+                            long total = end - start;
+                            hitTimes.put(domain, new Pair<>(end, total));
                         }
 
                         if (hash == null || !hash.equals(getMD5Hash(info.getDoc().text().getBytes())))
@@ -196,9 +221,10 @@ public enum EduWebcrawler
                         }
                     }
                 }
-                catch (IOException | InterruptedException e)
+                catch (HttpStatusException | SocketTimeoutException ex) {}
+                catch (IOException e)
                 {
-                    //e.printStackTrace();
+                    e.printStackTrace();
                 }
             });
         }
@@ -219,7 +245,7 @@ public enum EduWebcrawler
                         String toSave = info.getUrl().endsWith("/robots.txt") ? info.getDoc().body().wholeText() : info.getDoc().html();
 
                         Files.write(path, toSave.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-                        saveHash(path, Jsoup.parse(info.getDoc().html()).text().getBytes());
+                        saveInfo(path, info.getUrl(), Jsoup.parse(info.getDoc().html()).text().getBytes());
 
                         count.incrementAndGet();
                         dataSize.addAndGet(Files.size(path));
@@ -255,6 +281,23 @@ public enum EduWebcrawler
         return config.getMaxDataSize() >= 0L && dataSize.get() > config.getMaxDataSize();
     }
 
+    private boolean canHitServer(String domain)
+    {
+        Pair<Long, Long> p = hitTimes.get(domain);
+
+        if (p == null)
+        {
+            return true;
+        }
+
+        if (p.getKey() < 0L)
+        {
+            return false;
+        }
+
+        return (System.currentTimeMillis() - p.getKey()) < Math.max(p.getValue() * 3, 250L);
+    }
+
     private static String getMD5Hash(byte[] bytes)
     {
         try
@@ -272,15 +315,36 @@ public enum EduWebcrawler
         return "";
     }
 
-    private static void saveHash(Path path, byte[] bytes)
+    private static void saveInfo(Path path, String url, byte[] bytes)
     {
         try
         {
-            Files.write(Paths.get(path.toString() + ".md5"), Collections.singletonList(getMD5Hash(bytes)), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            List<String> list = new ArrayList<>();
+            list.add("url=" + url);
+            list.add("hash=" + getMD5Hash(bytes));
+            Files.write(Paths.get(path.toString() + ".info"), list, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         }
         catch (IOException e)
         {
             e.printStackTrace();
         }
+    }
+
+    public static String getInfoValue(Path path, String key)
+    {
+        try
+        {
+            Stream<String> lines = Files.lines(path);
+            Optional<String> keyVal = lines.filter(s -> s.startsWith(key)).findFirst();
+            if (keyVal.isPresent())
+            {
+                return keyVal.get().split("=")[1];
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return "";
     }
 }
