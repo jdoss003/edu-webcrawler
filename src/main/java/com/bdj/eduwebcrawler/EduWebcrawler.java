@@ -1,13 +1,11 @@
 package com.bdj.eduwebcrawler;
 
 import com.electronwill.nightconfig.core.file.FileConfig;
-import javafx.util.Pair;
-import org.jsoup.HttpStatusException;
+import com.sun.tools.javac.util.Pair;
 import org.jsoup.Jsoup;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +14,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,8 +36,8 @@ public enum EduWebcrawler
     private final QueuedWorkerPool<PageInfo> processors;
     private AtomicInteger count = new AtomicInteger(0);
     private AtomicLong dataSize = new AtomicLong(0L);
+    private Path tempDir;
 
-    private ConcurrentMap<String, String> updated = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Pair<Long, Long>> hitTimes = new ConcurrentHashMap<>();
 
     EduWebcrawler()
@@ -62,6 +61,16 @@ public enum EduWebcrawler
     {
         config.getSeedList().stream().map(PageInfo::new).forEach(downloaders::add);
 
+        try
+        {
+            tempDir = Files.createTempDirectory("eduweb");
+            tempDir.toFile().deleteOnExit();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
         scanDataDir();
         downloaders.start();
         processors.start();
@@ -75,10 +84,13 @@ public enum EduWebcrawler
                 downloaders.checkThreadStates();
                 processors.checkThreadStates();
 
-                if (downloaders.isEmpty() && processors.isEmpty() && ++i > 10000)
+                if (downloaders.isEmpty() && processors.isEmpty())
                 {
-                    System.out.println("Hit dead end");
-                    break;
+                    if (++i > 10000)
+                    {
+                        System.out.println("Hit dead end");
+                        break;
+                    }
                 }
                 else
                 {
@@ -96,6 +108,7 @@ public enum EduWebcrawler
             {
                 downloaders.stop();
                 processors.stop();
+                tempDir.toFile().delete();
                 throw new RuntimeException(t);
             }
         }
@@ -109,6 +122,7 @@ public enum EduWebcrawler
             catch (Throwable t)
             {
                 processors.stop();
+                tempDir.toFile().delete();
                 throw t;
             }
         }
@@ -149,14 +163,15 @@ public enum EduWebcrawler
                     int maxDepth = config.getMaxRedirects();
                     if (maxDepth < 0 || maxDepth > info.getDepth())
                     {
-                        Path path = Paths.get(URLUtils.getSavePath(info.getUrl()));
+                        Path path = Paths.get(info.getSavePath());
                         String domain = URLUtils.getDomainName(info.getUrl());
                         String hash = null;
 
-                        if (updated.containsKey(path.toString()))
+                        if (hasProcessed(info))
                         {
                             return;
                         }
+                        setProcessed(info);
 
                         if (Files.exists(path))
                         {
@@ -199,7 +214,6 @@ public enum EduWebcrawler
                             {
                                 count.decrementAndGet();
 
-                                updated.put(path.toString(), hash);
                                 dataSize.addAndGet(-Files.size(path));
                                 System.out.println("Hash difference for: " + info.getUrl());
                             }
@@ -221,10 +235,9 @@ public enum EduWebcrawler
                         }
                     }
                 }
-                catch (HttpStatusException | SocketTimeoutException ex) {}
-                catch (IOException e)
+                catch (IOException | IllegalArgumentException  e)
                 {
-                    e.printStackTrace();
+                    System.out.println("Error getting page: " + info.getUrl());
                 }
             });
         }
@@ -238,7 +251,7 @@ public enum EduWebcrawler
             {
                 try
                 {
-                    Path path = Paths.get(URLUtils.getSavePath(info.getUrl()));
+                    Path path = Paths.get(info.getSavePath());
                     if (!Files.exists(path))
                     {
                         Files.createDirectories(path.getParent());
@@ -290,12 +303,12 @@ public enum EduWebcrawler
             return true;
         }
 
-        if (p.getKey() < 0L)
+        if (p.fst < 0L)
         {
             return false;
         }
 
-        return (System.currentTimeMillis() - p.getKey()) < Math.max(p.getValue() * 3, 250L);
+        return (System.currentTimeMillis() - p.fst) < Math.max(p.snd * 3, 250L);
     }
 
     private static String getMD5Hash(byte[] bytes)
@@ -332,9 +345,8 @@ public enum EduWebcrawler
 
     public static String getInfoValue(Path path, String key)
     {
-        try
+        try(Stream<String> lines = Files.lines(path))
         {
-            Stream<String> lines = Files.lines(path);
             Optional<String> keyVal = lines.filter(s -> s.startsWith(key)).findFirst();
             if (keyVal.isPresent())
             {
@@ -346,5 +358,38 @@ public enum EduWebcrawler
             e.printStackTrace();
         }
         return "";
+    }
+
+    private void setProcessed(PageInfo info)
+    {
+        Path tempPath = tempDir.resolve(Paths.get(info.getSavePath()).getParent()).resolve("./pages.txt");
+
+        try
+        {
+            if (!Files.exists(tempPath))
+            {
+                Files.createDirectories(tempPath.getParent());
+                Files.createFile(tempPath);
+            }
+
+            Files.write(tempPath, Collections.singletonList(info.getSavePath()), StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+        }
+        catch (IOException e) {}
+    }
+
+    private boolean hasProcessed(PageInfo info)
+    {
+        Path tempPath = tempDir.resolve(Paths.get(info.getSavePath()).getParent()).resolve("./pages.txt");
+
+        if (Files.exists(tempPath))
+        {
+            try(Stream<String> lines = Files.lines(tempPath))
+            {
+                return lines.anyMatch(s -> s.equals(info.getSavePath()));
+            }
+            catch (IOException e) {}
+        }
+
+        return false;
     }
 }

@@ -5,6 +5,7 @@ import org.jsoup.nodes.Document;
 public class PageInfo
 {
     private String url;
+    private String savePath;
     private int depth;
     private Document doc;
 
@@ -21,6 +22,7 @@ public class PageInfo
     public PageInfo(String url, int depth, Document doc)
     {
         this.url = url;
+        this.savePath = URLUtils.getSavePath(url);
         this.depth = depth;
         this.doc = doc;
     }
@@ -28,6 +30,11 @@ public class PageInfo
     public String getUrl()
     {
         return this.url;
+    }
+
+    public String getSavePath()
+    {
+        return this.savePath;
     }
 
     public int getDepth()
@@ -48,6 +55,6 @@ public class PageInfo
     @Override
     public boolean equals(Object o)
     {
-        return o instanceof PageInfo && URLUtils.getSavePath(this.url).equals(URLUtils.getSavePath(((PageInfo)o).url));
+        return o instanceof PageInfo && this.savePath.equals(((PageInfo)o).savePath);
     }
 }

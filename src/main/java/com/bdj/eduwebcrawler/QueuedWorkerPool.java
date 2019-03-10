@@ -26,10 +26,7 @@ public class QueuedWorkerPool<T>
 
     public void add(T item)
     {
-        if (!this.queue.contains(item))
-        {
-            this.queue.add(item);
-        }
+        this.queue.add(item);
     }
 
     public Optional<T> getNextItem()
