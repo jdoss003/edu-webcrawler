@@ -26,7 +26,10 @@ public class QueuedWorkerPool<T>
 
     public void add(T item)
     {
-        this.queue.add(item);
+        if (!this.queue.contains(item))
+        {
+            this.queue.add(item);
+        }
     }
 
     public Optional<T> getNextItem()
@@ -37,6 +40,11 @@ public class QueuedWorkerPool<T>
     public boolean isEmpty()
     {
         return this.queue.isEmpty();
+    }
+
+    public boolean contains(T item)
+    {
+        return this.queue.contains(item);
     }
 
     public void start()
