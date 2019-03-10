@@ -7,7 +7,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 public class URLUtils
 {
@@ -48,10 +47,10 @@ public class URLUtils
         }
         String ret = EduWebcrawler.INSTANCE.getConfig().getDataPath() + "/" + domain + "/" + prefix + "/" + suffix;
         ret = ret.replaceAll("\\.", "/").replaceAll("//", "/");
-        return ret.endsWith("/txt") ? ret.replaceAll("/txt$", ".txt") : ret + ".html";
+        return ret.endsWith("/txt") ? ret.replaceAll("/txt$", ".txt") : (!ret.endsWith(".html") ? ret + ".html" : ret);
     }
 
-    public static void foreachURL(Document doc, Predicate<String> predicate, Consumer<String> consumer)
+    public static void foreachURL(Document doc, Consumer<String> consumer)
     {
         Elements elements = doc.getElementsByAttribute("href");
 
@@ -61,10 +60,7 @@ public class URLUtils
             {
                 String link = e.attr("href");
 
-               if (predicate.test(link))
-               {
-                   consumer.accept(link);
-               }
+                consumer.accept(link);
             }
         });
     }
@@ -75,7 +71,7 @@ public class URLUtils
         {
             URL u = new URL(curr.trim());
             if (link.startsWith("/"))
-                link = u.toURI().resolve(link).toString();
+                link = u.toURI().resolve(link.trim()).toString();
             int pos = link.indexOf('#');
             if (pos != -1)
                 link = link.substring(0, pos);
@@ -87,7 +83,7 @@ public class URLUtils
         }
         catch (MalformedURLException | URISyntaxException ex)
         {
-            ex.printStackTrace();
+            //ex.printStackTrace();
         }
         return link;
     }

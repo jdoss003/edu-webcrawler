@@ -44,4 +44,10 @@ public class PageInfo
     {
         this.doc = doc;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        return o instanceof PageInfo && URLUtils.getSavePath(this.url).equals(URLUtils.getSavePath(((PageInfo)o).url));
+    }
 }

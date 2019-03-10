@@ -1,3 +1,6 @@
+#mandatory
+updatepages = true
+
 #optional
 downloaders = 2
 
@@ -6,20 +9,29 @@ processors = 4
 
 #optional - Default is unlinited (-1)
 #this or 'maxdatasize' must be set to a positive value
-maxpages = 100
+#maxpages = 100
 
 #optional - Default is unlinited (-1)
-#maxredirects = 100
+maxredirects = 500
 
 #optional - Default is unlinited (-1)
 #this or 'maxpages' must be set to a positive value
 #size is measured in bytes
-#maxdatasize = 1000000000
+maxdatasize = 1000001000
 
 #mandatory
-datapath="data/test"
+datapath="data"
 
 #mandatory
 seedlist = '''
-http://ucr.edu/
+http://www.ucr.edu/
+http://www.stanford.edu
+http://www.mit.edu
+https://www.yale.edu
+https://www.princeton.edu
+https://www.uoregon.edu
+https://www.byu.edu
+https://www.columbia.edu
+https://www.duke.edu
+https://www.jhu.edu
 '''
