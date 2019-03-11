@@ -22,4 +22,5 @@ dependencies {
     compile "guru.nidi:graphviz-java:${graphviz_version}"
     compile "com.electronwill.night-config:core:${nightconfig_version}"
     compile "com.electronwill.night-config:toml:${nightconfig_version}"
+    compile "net.sf.jopt-simple:jopt-simple:${jopt_version}"
 }
