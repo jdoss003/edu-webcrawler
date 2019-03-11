@@ -5,9 +5,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.document.*;
+import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
@@ -41,21 +45,30 @@ public class Indexer implements AutoCloseable {
         writer.close();
     }
 
-    public void addDoc(String url, List<String> parentURLs, List<String> childURLs, String text) throws IOException {
+    public void addDoc(String url, String title, String description, String keywords, List<String> childURLs, String text) throws IOException {
         //create new document
         Document doc = new Document();
 
         //add fields to document
+        //url
         doc.add(new StringField("url", url, StringField.Store.YES));
-        doc.add(new TextField("text", text, TextField.Store.YES));
-
-        for (String temp : parentURLs){
-            doc.add(new StringField("parentURLs", temp, StringField.Store.YES));
-        }
-
+        //title
+        doc.add(new StringField("title", title, StringField.Store.YES));
+        //descriptions
+        doc.add(new StringField("description", description, StringField.Store.YES));
+        //keywords
+        doc.add(new StringField("keywords", keywords, StringField.Store.YES));
+        //child urls
         for (String temp : childURLs){
             doc.add(new StringField("childURLs", temp, StringField.Store.YES));
         }
+        //add text to doc
+        FieldType type = new FieldType();
+        type.setTokenized(true);
+        type.setStoreTermVectors(true);
+        type.setStored(true);
+        type.setIndexOptions(IndexOptions.DOCS_AND_FREQS);
+        doc.add(new Field("text", text, type));
 
         //add document to index
         writer.addDocument(doc);
