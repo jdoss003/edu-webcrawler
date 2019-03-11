@@ -1,6 +1,7 @@
 package com.bdj.eduwebcrawler;
 import org.graphstream.graph.*;
 import org.graphstream.graph.implementations.*;
+import org.graphstream.stream.file.FileSourceGEXF;
 import org.graphstream.ui.view.*;
 
 
@@ -11,6 +12,16 @@ import org.graphstream.ui.view.*;
  	public static void Seed() {
  		Graph mainGraph = new SingleGraph("NodeClicks");
  		Viewer views = mainGraph.display();
+ 		for(int i=0; i <10;++i) {
+			mainGraph.addNode(Integer.toString(i));
+			Node x=mainGraph.getNode(Integer.toString(i));
+			x.addAttribute("ui.label","A"+Integer.toString(i));
+			if(i>0) {
+				mainGraph.addEdge("EDGE" + Integer.toString(i),  Integer.toString(i-1),
+						 Integer.toString(i), true);
+			}
+
+		}
 
  		views.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
 
@@ -42,3 +53,11 @@ import org.graphstream.ui.view.*;
     }
 
  */
+//Parent shares node already and same depth return false
+/*public boolean HasEdgeParent(Graph g, Node x){
+		String Child=x.getId();
+		if(x.hasEdgeBetween(FileSourceGEXF.GEXFConstants.PARENTAttribute));
+			return false;
+			return true;
+
+	}*/
