@@ -1,11 +1,13 @@
 package com.bdj.eduwebcrawler;
 
 import com.electronwill.nightconfig.core.file.FileConfig;
-import com.sun.tools.javac.util.Pair;
+import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +31,7 @@ public enum EduWebcrawler
     INSTANCE;
 
     private static final String CONFIG_PATH = "./crawler_config.toml";
-    public static final Predicate<String> URL_PREDICATE = s -> (s.startsWith("/") || s.contains(".edu")) && !(s.contains("@") || s.endsWith("docx") || s.endsWith("pdf"));
+    public final Predicate<String> URL_PREDICATE;
 
     private final CrawlerConfig config;
     private final QueuedWorkerPool<PageInfo> downloaders;
@@ -50,6 +52,38 @@ public enum EduWebcrawler
         downloaders = new QueuedWorkerPool<>("DOWNLOAD", config.getDownloaders(), this::downloader);
         processors = new QueuedWorkerPool<>("PROCESS", config.getProcessors(), this::processor);
 
+        URL_PREDICATE = s ->
+        {
+            try
+            {
+                boolean validTLD = false;
+                URL u = new URL(s);
+                for (String tld : config.getValidTLDs())
+                {
+                    if (u.getHost().toLowerCase().endsWith(tld))
+                    {
+                        validTLD = true;
+                        break;
+                    }
+                }
+                String extension = FilenameUtils.getExtension(u.getFile()).trim();
+                boolean validExtension = extension.trim().isEmpty();
+                if (validTLD && !validExtension)
+                {
+                    for (String ex: config.getValidExtensions())
+                    {
+                        if (extension.equals(ex))
+                        {
+                            validExtension = true;
+                            break;
+                        }
+                    }
+                }
+                return validTLD && validExtension && !s.contains("@");
+            }
+            catch (MalformedURLException e) {}
+            return false;
+        };
     }
 
     public CrawlerConfig getConfig()
