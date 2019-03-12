@@ -10,10 +10,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Queue;
 
+import static java.lang.System.exit;
+
 
 public class GraphUI implements ViewerListener{
  	protected boolean loop= true;
-
+	public String IDClicked;
+	public boolean Screen;
  	public static void SetName(Node Nnode, String url)
 	{
 		Nnode.addAttribute("ui.label",url);
@@ -28,16 +31,26 @@ public class GraphUI implements ViewerListener{
 
 	public void buttonPushed(String id) {
 		System.out.println("Button pushed on node "+id);
+		IDClicked=id;
+		//create new graph if id matches seed url
+		if(Screen){
+			new GraphUI(true);
+		}
+
 	}
 
 	public void buttonReleased(String id) {
-		System.out.println("Button released on node "+id);
+		//System.out.println("Results For:"+id);
+
 	}
 
 
- 	public GraphUI() {
+ 	public GraphUI(boolean exit) {
  		Graph mainGraph = new SingleGraph("NodeClicks");
  		Viewer views = mainGraph.display();
+
+
+
  		for(int i=0; i <10;++i) {
 
  			String idHelper="www.ucr.edu"+Integer.toString(i);
@@ -57,12 +70,29 @@ public class GraphUI implements ViewerListener{
  		fviews.addViewerListener(this);
  		fviews.addSink(mainGraph);
 
- 		views.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
- 		while(loop)
-		{
-			fviews.pump();
+
+
+
+
+
+
+ 		//exit application handlers
+		if(exit) {
+			views.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
+			Screen=false;
 		}
+		else{
+			views.setCloseFramePolicy(Viewer.CloseFramePolicy.CLOSE_VIEWER);
+			Screen=true;
+		}
+
+ 			while(loop) {
+			fviews.pump();
+
+		}
+
  	}
+
  	public static Queue NodeFiles(Queue e) throws IOException {
 		String fileName="";
 		File file= new File(fileName);
@@ -86,8 +116,22 @@ public class GraphUI implements ViewerListener{
 		 Graph graph = new SingleGraph("ViewerMap");
 		 Viewer views=graph.display();
 		 View viewOpt = views.getDefaultView();
-
 		 Node y;
+		 // DOC Implementation
+
+
+
+
+
+
+		 // DOC Implementation
+
+
+
+
+
+
+
 		for(int i=0;i<seed_Size;++i) {
 			graph.addNode("seed"+Integer.toString(i));
 			y=graph.getNode("seed"+Integer.toString(i));
@@ -99,7 +143,9 @@ public class GraphUI implements ViewerListener{
 
 		 //SetName(y,"url");
 
-		 new GraphUI();
+		 new GraphUI(false);
+			exit(0);
+
 	 }
  }
 
