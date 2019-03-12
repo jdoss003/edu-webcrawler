@@ -7,9 +7,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.lucene.analysis.TokenStream;
+
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriter;

@@ -17,6 +17,9 @@ public class HTMLUtils {
     }
 
     public static String getText(Document d) {
+        if(d.body() == null){
+            return "";
+        }
         return d.body().text();
     }
 
