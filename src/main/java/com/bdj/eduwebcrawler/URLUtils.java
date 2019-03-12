@@ -11,17 +11,15 @@ public class URLUtils
 {
     public static String getDomainName(String url)
     {
-        int epos = url.indexOf(".edu");
-        if (epos != -1)
+        try
         {
-            int pos = url.lastIndexOf(".", epos - 1);
-            if (pos == -1)
-            {
-                pos = url.lastIndexOf("/", epos - 1);
-            }
-
-            return pos != -1 ? url.substring(pos + 1, epos) : url.substring(0, epos);
+            URL u = new URL(url.trim());
+            String host = u.getHost().toLowerCase();
+            int epos = host.lastIndexOf(".");
+            int pos = host.lastIndexOf(".", epos - 1);
+            return pos != -1 ? host.substring(pos + 1, epos) : host.substring(0, epos);
         }
+        catch (MalformedURLException e) {}
         return url;
     }
 
@@ -29,11 +27,13 @@ public class URLUtils
     {
         try
         {
-            String domain = getDomainName(url);
-            url = url.replaceAll("^http[s]*://","").replaceAll("^www[1-9]*\\.", "").replaceAll("[./]*$", "");
-            int pos = url.indexOf(domain + ".edu");
-            String prefix = pos > 0 ? url.substring(0, pos).replaceAll("[./]*$", "") : "";
-            String suffix = url.substring(pos + domain.length() + 4).replaceAll("[./]*$", "");
+            URL u = new URL(url.trim());
+            String host = u.getHost().replaceAll("^www[1-9]*\\.", "").toLowerCase();
+            int epos = host.lastIndexOf(".");
+            int pos = host.lastIndexOf(".", epos - 1);
+            String domain = pos != -1 ? host.substring(pos + 1, epos) : host.substring(0, epos);
+            String prefix = pos > 0 ? host.substring(0, pos).replaceAll("[./]*$", "") : "";
+            String suffix = url.substring(url.indexOf(u.getHost()) + u.getHost().length()).replaceAll("[./]*$", "");
             if (suffix.trim().isEmpty())
             {
                 if (prefix.trim().isEmpty())
@@ -47,14 +47,16 @@ public class URLUtils
                 }
             }
             String ret = EduWebcrawler.INSTANCE.getConfig().getDataPath() + "/" + domain + "/" + prefix + "/" + suffix;
-            ret = ret.replaceAll("\\.", "/").replaceAll("//", "/");
-            return ret.endsWith("/txt") ? ret.replaceAll("/txt$", ".txt") : (!ret.endsWith(".html") ? ret + ".html" : ret);
+            ret = ret.replaceAll("\\.", "/").replaceAll("//[/]*", "/").replaceAll("/html$", ".html");
+            return (ret.endsWith("/txt") ? ret.replaceAll("/txt$", ".txt") : (!ret.endsWith(".html") ? ret + ".html" : ret)).toLowerCase();
         }
+        catch (MalformedURLException e) {}
         catch (Throwable t)
         {
             System.out.println("Erroring URL: " + url);
             throw t;
         }
+        return null;
     }
 
     public static void foreachURL(Document doc, Consumer<String> consumer)
@@ -63,12 +65,8 @@ public class URLUtils
 
         elements.forEach(e ->
         {
-            if (e.tag().getName().equals("a"))
-            {
-                String link = e.attr("href");
-
-                consumer.accept(link);
-            }
+            String link = e.attr("href");
+            consumer.accept(link);
         });
     }
 
