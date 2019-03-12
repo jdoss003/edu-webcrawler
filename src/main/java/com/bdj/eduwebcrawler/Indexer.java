@@ -52,16 +52,12 @@ public class Indexer implements AutoCloseable {
         //add fields to document
         //url
         doc.add(new StringField("url", url, StringField.Store.YES));
-        //title
-        doc.add(new StringField("title", title, StringField.Store.YES));
-        //descriptions
-        doc.add(new StringField("description", description, StringField.Store.YES));
-        //keywords
-        doc.add(new StringField("keywords", keywords, StringField.Store.YES));
+
         //child urls
         for (String temp : childURLs){
             doc.add(new StringField("childURLs", temp, StringField.Store.YES));
         }
+
         //add text to doc
         FieldType type = new FieldType();
         type.setTokenized(true);
@@ -69,6 +65,21 @@ public class Indexer implements AutoCloseable {
         type.setStored(true);
         type.setIndexOptions(IndexOptions.DOCS_AND_FREQS);
         doc.add(new Field("text", text, type));
+
+        //title
+        if (!title.isEmpty()) {
+            doc.add(new StringField("title", title, StringField.Store.YES));
+        }
+
+        //descriptions
+        if (!description.isEmpty()) {
+            doc.add(new StringField("description", description, StringField.Store.YES));
+        }
+
+        //keywords
+        if (!keywords.isEmpty()) {
+            doc.add(new StringField("keywords", keywords, StringField.Store.YES));
+        }
 
         //add document to index
         writer.addDocument(doc);

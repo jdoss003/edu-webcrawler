@@ -57,33 +57,6 @@ public class Searcher {
         return Optional.empty();
     }
 
-    public Map<String, Integer> getKeywords(String key, String url) throws IOException{
-        //create query
-        Term t = new Term(key, url);
-        TermQuery query = new TermQuery(t);
-        TopDocs result = searcher.search(query, 1);
-
-        //Get term vector and return top 10 terms in doc
-        ScoreDoc[] hit = result.scoreDocs;
-        int docId = hit[0].doc;
-        return(getKeywordsByDocId(docId));
-    }
-
-    public Map<String, Integer> getKeywordsByDocId(int id) throws IOException {
-        Terms tv = reader.getTermVector(id, "text");
-        TermsEnum iter = tv.iterator();
-        BytesRef ref = null;
-        Map<String, Integer> keywords = new HashMap<>();
-        while ((ref = iter.next()) != null){
-            keywords.put(iter.term().utf8ToString(), iter.postings(null).freq());
-        }
-        return keywords.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue())
-                .limit(10)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-    }
-
     public ScoreDoc[] queryText(String querystr) throws IOException, ParseException {
         Query q = new QueryParser("text", analyzer).parse(querystr);
         TopDocs result = searcher.search(q, 10);
@@ -102,4 +75,30 @@ public class Searcher {
 
     public Document getDocByDocId(int id) throws IOException {return searcher.doc(id);}
 
+    public Map<String, Integer> getKeywords(String key, String url) throws IOException{
+        //create query
+        Term t = new Term(key, url);
+        TermQuery query = new TermQuery(t);
+        TopDocs result = searcher.search(query, 1);
+
+        //Get term vector and return top 10 terms in doc
+        ScoreDoc[] hit = result.scoreDocs;
+        int docId = hit[0].doc;
+        return(getKeywordsByDocId(docId));
+    }
+
+    public Map<String, Integer> getKeywordsByDocId(int id) throws IOException {
+        Terms tv = reader.getTermVector(id, "text");
+        TermsEnum iter = tv.iterator();
+        BytesRef ref = null;
+        Map<String, Integer> keywords = new HashMap<>();
+        while ((ref = iter.next()) != null){
+            keywords.put(iter.term().utf8ToString(), (int)iter.totalTermFreq());
+        }
+        //sort hashmap and return top 10 entries
+        return keywords.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(10)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+    }
 }

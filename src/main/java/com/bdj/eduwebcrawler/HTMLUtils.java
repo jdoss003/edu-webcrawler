@@ -1,19 +1,14 @@
 package com.bdj.eduwebcrawler;
 
 import org.jsoup.Jsoup;
-import org.jsoup.helper.Validate;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
-import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import org.jsoup.select.NodeTraversor;
+
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+
 
 public class HTMLUtils {
 
@@ -31,13 +26,22 @@ public class HTMLUtils {
 
     public static String getDescription(Document d) {
         Elements metaTags = d.getElementsByTag("meta");
-        metaTags.attr("name", "description");
-        return metaTags.text();
+        return getter(metaTags, "description");
     }
 
     public static String getKeywords(Document d) {
         Elements metaTags = d.getElementsByTag("meta");
-        metaTags.attr("name", "keywords");
-        return metaTags.text();
+        return getter(metaTags, "keywords");
+    }
+
+    private static String getter(Elements metaTags, String attr) {
+        for (Element metaTag : metaTags) {
+            String content = metaTag.attr("content");
+            String name = metaTag.attr("name");
+            if(attr.equals(name)) {
+                return content;
+            }
+        }
+        return "";
     }
 }
