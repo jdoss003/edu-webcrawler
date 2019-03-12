@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.util.Queue;
 
 
-public class GraphUI{
- 	public boolean loop= true;
+public class GraphUI implements ViewerListener{
+ 	protected boolean loop= true;
 
  	public static void SetName(Node Nnode, String url)
 	{
@@ -25,27 +25,7 @@ public class GraphUI{
 	public void viewClosed(String id) {
 		loop = false;
 	}
-	public void Clicks() {
 
-		Graph graph = new SingleGraph("Clicks");
-		Viewer viewer = graph.display();
-
-
-		viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
-
-
-		ViewerPipe fromViewer = viewer.newViewerPipe();
-		fromViewer.addViewerListener((ViewerListener) this);
-		fromViewer.addSink(graph);
-
-
-
-		while(loop) {
-			fromViewer.pump(); // or fromViewer.blockingPump();
-
-
-		}
-	}
 	public void buttonPushed(String id) {
 		System.out.println("Button pushed on node "+id);
 	}
@@ -53,22 +33,35 @@ public class GraphUI{
 	public void buttonReleased(String id) {
 		System.out.println("Button released on node "+id);
 	}
- 	public static void Seed() {
+
+
+ 	public GraphUI() {
  		Graph mainGraph = new SingleGraph("NodeClicks");
  		Viewer views = mainGraph.display();
  		for(int i=0; i <10;++i) {
-			mainGraph.addNode(Integer.toString(i));
-			Node x=mainGraph.getNode(Integer.toString(i));
-			x.addAttribute("ui.label","A"+Integer.toString(i));
+
+ 			String idHelper="www.ucr.edu"+Integer.toString(i);
+			mainGraph.addNode(idHelper);
+			Node x=mainGraph.getNode(idHelper);
+			x.addAttribute("ui.label","www.ucr.edu"+Integer.toString(i));
+			if(i==0) {
+				x.addAttribute("ui.style", "shape:circle;fill-color: yellow;size:20px;");
+			}
 			if(i>0) {
-				mainGraph.addEdge("EDGE" + Integer.toString(i),  Integer.toString(i-1),
-						 Integer.toString(i), true);
+				String idPrev="www.ucr.edu"+Integer.toString((i-1));
+				mainGraph.addEdge("EDGE" +Integer.toString(i),idHelper,idPrev, true);
 			}
 
 		}
+		ViewerPipe fviews= views.newViewerPipe();
+ 		fviews.addViewerListener(this);
+ 		fviews.addSink(mainGraph);
 
  		views.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
-
+ 		while(loop)
+		{
+			fviews.pump();
+		}
  	}
  	public static Queue NodeFiles(Queue e) throws IOException {
 		String fileName="";
@@ -89,22 +82,24 @@ public class GraphUI{
 
 
 		 Queue<String> Files;
-
+		 final Integer  seed_Size=22;
 		 Graph graph = new SingleGraph("ViewerMap");
 		 Viewer views=graph.display();
 		 View viewOpt = views.getDefaultView();
-		 graph.addNode("sample");
-		 Node y=graph.getNode("sample");
-		 y.setAttribute("xyz",2,1,0);
-		 graph.addNode("s");
-		 y=graph.getNode("s");
-		 y.setAttribute("xyz",3,1,0);
-		 graph.addNode("middle");
-		 y=graph.getNode("middle");
-		 y.setAttribute("xyz",2.5,1,0);
-		 SetName(y,"url");
-		 // when node is selected execute subgraph
-		 //Seed();
+
+		 Node y;
+		for(int i=0;i<seed_Size;++i) {
+			graph.addNode("seed"+Integer.toString(i));
+			y=graph.getNode("seed"+Integer.toString(i));
+			SetName(y,"seed#");
+			y.addAttribute("ui.style","shape:circle;fill-color: yellow;size:15px;");
+			y.setAttribute("xyz",2.5,i,0);
+		}
+		 //y=graph.getNode("middle");
+
+		 //SetName(y,"url");
+
+		 new GraphUI();
 	 }
  }
 
@@ -132,3 +127,4 @@ public class GraphUI{
 			return true;
 
 	}*/
+//22
