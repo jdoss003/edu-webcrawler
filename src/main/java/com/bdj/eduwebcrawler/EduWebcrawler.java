@@ -30,6 +30,8 @@ public enum EduWebcrawler
 {
     INSTANCE;
 
+    private static final boolean DEBUG = false;
+
     private static final String CONFIG_PATH = "./crawler_config.toml";
     public final Predicate<String> URL_PREDICATE;
 
@@ -94,6 +96,16 @@ public enum EduWebcrawler
     public void run()
     {
         config.getSeedList().stream().map(PageInfo::new).forEach(downloaders::add);
+
+        try
+        {
+            Files.createDirectories(Paths.get(config.getDataPath()));
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
 
         scanDataDir();
         downloaders.start();
@@ -231,11 +243,27 @@ public enum EduWebcrawler
                                 return;
                             }
 
-                            long start = System.currentTimeMillis();
-                            info.setDoc(Jsoup.parse(Jsoup.connect(info.getUrl()).get().html()));
-                            long end = System.currentTimeMillis();
-                            long total = end - start;
-                            hitTimes.put(domain, new Pair<>(end, total));
+                           try
+                           {
+                               long start = System.currentTimeMillis();
+                               info.setDoc(Jsoup.parse(Jsoup.connect(info.getUrl()).get().html()));
+                               long end = System.currentTimeMillis();
+                               long total = end - start;
+                               hitTimes.put(domain, new Pair<>(end, total));
+                           }
+                           catch (IOException e)
+                           {
+                               if (DEBUG)
+                               {
+                                   System.out.println("Error getting page: " + info.getUrl());
+                                   System.out.println(e);
+                               }
+
+                               long end = System.currentTimeMillis();
+                               long total = end - 500L;
+                               hitTimes.put(domain, new Pair<>(end, total));
+                               return;
+                           }
                         }
 
                         if (pathList.contains(pathStr))
@@ -245,39 +273,18 @@ public enum EduWebcrawler
                         pathList.add(pathStr);
                         watchdog.set(0);
 
-                        if (hash == null || !hash.equals(getMD5Hash(info.getDoc().text().getBytes())))
+                        if (config.shouldUpdatePages() && hash != null && !hash.equals(getMD5Hash(info.getDoc().text().getBytes())))
                         {
-                            processors.add(info);
-                            if (hash != null)
-                            {
-                                count.decrementAndGet();
+                            info.setOverwrite(true);
+                            count.decrementAndGet();
 
-                                dataSize.addAndGet(-Files.size(path));
-                                System.out.println("Hash difference for: " + info.getUrl());
-                            }
+                            dataSize.addAndGet(-Files.size(path));
+                            System.out.println("Hash difference for: " + info.getUrl());
                         }
-                        else
-                        {
-                            URLUtils.foreachURL(info.getDoc(), link ->
-                            {
-                                try
-                                {
-                                    link = URLUtils.normalizeURL(info.getUrl(), link);
-                                    if (URL_PREDICATE.test(link))
-                                    {
-                                        downloaders.add(new PageInfo(link, info.getDepth() + 1));
-                                    }
-                                }
-                                catch (IllegalArgumentException e) {}
-                            });
-                        }
+                        processors.add(info);
                     }
                 }
-                catch (IOException | IllegalArgumentException  e)
-                {
-                    System.out.println("Error getting page: " + info.getUrl());
-                    System.out.println(e);
-                }
+                catch (IOException | IllegalArgumentException  e) {}
             });
         }
     }
@@ -292,8 +299,11 @@ public enum EduWebcrawler
                 {
                     watchdog.set(0);
                     Path path = Paths.get(info.getSavePath());
-                    if (!Files.exists(path))
+                    if (info.shouldOverwrite() || !Files.exists(path))
                     {
+                        Files.deleteIfExists(path);
+                        Files.deleteIfExists(Paths.get(path.toString() + ".info"));
+
                         Files.createDirectories(path.getParent());
                         String toSave = info.getUrl().endsWith("/robots.txt") ? info.getDoc().body().wholeText() : info.getDoc().html();
 

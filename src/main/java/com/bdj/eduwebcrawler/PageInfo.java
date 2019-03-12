@@ -8,6 +8,7 @@ public class PageInfo
     private String savePath;
     private int depth;
     private Document doc;
+    private boolean overwrite = false;
 
     public PageInfo(String url)
     {
@@ -50,6 +51,16 @@ public class PageInfo
     public void setDoc(Document doc)
     {
         this.doc = doc;
+    }
+
+    public boolean shouldOverwrite()
+    {
+        return this.overwrite;
+    }
+
+    public void setOverwrite(boolean b)
+    {
+        this.overwrite = b;
     }
 
     @Override

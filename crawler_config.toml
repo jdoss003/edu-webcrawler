@@ -2,10 +2,10 @@
 updatepages = false
 
 #optional
-downloaders = 1
+downloaders = 4
 
 #optional
-processors = 1
+processors = 3
 
 #optional - Default is unlinited (-1)
 #this or 'maxdatasize' must be set to a positive value
