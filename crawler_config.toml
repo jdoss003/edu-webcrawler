@@ -2,10 +2,10 @@
 updatepages = false
 
 #optional
-downloaders = 3
+downloaders = 1
 
 #optional
-processors = 4
+processors = 1
 
 #optional - Default is unlinited (-1)
 #this or 'maxdatasize' must be set to a positive value
@@ -28,7 +28,7 @@ valid_tlds="edu"
 
 #mandatory
 #separated by semicolons ';'
-valid_extensions="html;txt"
+valid_extensions="html;shtml;txt"
 
 #mandatory
 seedlist = '''
@@ -42,4 +42,14 @@ https://www.byu.edu
 https://www.columbia.edu
 https://www.duke.edu
 https://www.jhu.edu
+http://www.palomar.edu
+http://www.valleycollege.edu
+http://www.rcc.edu
+http://www.rccd.edu
+http://www.redlands.edu
+http://www.sdcity.edu
+http://www.sdmesa.edu
+http://www.sdsu.edu
+http://www.sandiego.edu
+http://www.craftonhills.edu
 '''
