@@ -42,7 +42,7 @@ public class Searcher {
         searcher = new IndexSearcher(reader);
     }
 
-    public Optional<Document> searchByURL(String key, String url) throws IOException{
+    public Document searchByURL(String key, String url) throws IOException{
         //create query
         Term t = new Term(key, url);
         TermQuery query = new TermQuery(t);
@@ -50,11 +50,14 @@ public class Searcher {
 
         //see if result matches given url. Return document with url else return nothing
         ScoreDoc[] hit = result.scoreDocs;
+        if(hit.length == 0) {
+            return null;
+        }
         int docId = hit[0].doc;
         Document d = searcher.doc(docId);
         if (d.get("url").equals(url))
-            return Optional.of(d);
-        return Optional.empty();
+            return d;
+        return null;
     }
 
     public ScoreDoc[] queryText(String querystr) throws IOException, ParseException {
