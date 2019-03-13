@@ -50,7 +50,7 @@ public class Searcher {
 
         //see if result matches given url. Return document with url else return nothing
         ScoreDoc[] hit = result.scoreDocs;
-        if(hit.length == 0) {
+        if(hit.length == 0){
             return null;
         }
         int docId = hit[0].doc;
@@ -84,6 +84,9 @@ public class Searcher {
 
         //Get term vector and return top 10 terms in doc
         ScoreDoc[] hit = result.scoreDocs;
+        if(hit.length == 0){
+            return null;
+        }
         int docId = hit[0].doc;
         return(getKeywordsByDocId(docId));
     }
