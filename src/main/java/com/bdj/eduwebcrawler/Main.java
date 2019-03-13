@@ -4,9 +4,6 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
-import java.io.File;
-import java.util.Arrays;
-
 public class Main
 {
     public static void main(String[] args)
@@ -18,20 +15,24 @@ public class Main
         OptionSpec<Void> visualizationOption = parser.accepts("visualize", "Visualize the graph of crawled websites");
         OptionSet optionSet = parser.parse(args);
 
-        if (optionSet.has(crawlOption)) {
+        if (optionSet.has(crawlOption))
+        {
             EduWebcrawler.INSTANCE.run();
         }
 
-        if (optionSet.has(rebuildOption)) {
+        if (optionSet.has(rebuildOption))
+        {
             Loader.run();
         }
 
-        if (optionSet.has(queryOption)) {
+        if (optionSet.has(queryOption))
+        {
             Querent.run();
         }
 
-        if (optionSet.has(queryOption)) {
-           //TODO: Visualization Option
+        if (optionSet.has(visualizationOption))
+        {
+            GraphUI.run();
         }
     }
 }
