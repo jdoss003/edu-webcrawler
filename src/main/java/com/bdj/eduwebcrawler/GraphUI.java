@@ -71,7 +71,7 @@ public class GraphUI implements ViewerListener{
 
 
 	public void buttonPushed(String id) {
-		System.out.println("NODE "+ id);
+	//	System.out.println("NODE "+ id);
 
 
 	}
@@ -80,7 +80,7 @@ public class GraphUI implements ViewerListener{
 
 	public void buttonReleased(String id) {
 
-		System.out.println("Button pushed on node " + id);
+		System.out.println("Clicked on node " + id);
 
 		//create new graph if id matches seed url
 
@@ -204,7 +204,7 @@ public class GraphUI implements ViewerListener{
 
 									//SetName(y, child);
 
-									y.addAttribute("ui.style","shape:triangle;fill-color:orange;size:15px;");
+									y.addAttribute("ui.style","shape:triangle;fill-color:yellow;size:15px;");
 
 									mainGraph.addEdge((id + child), id, child, true);
 
