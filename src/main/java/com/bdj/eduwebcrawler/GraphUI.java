@@ -152,7 +152,7 @@ public class GraphUI implements ViewerListener{
 
 						Node y = mainGraph.getNode(child);
 
-						SetName(y, child);
+						//SetName(y, child);
 
 						y.addAttribute("ui.style","shape:triangle;fill-color:orange;size:15px;");
 
@@ -168,63 +168,63 @@ public class GraphUI implements ViewerListener{
 
 				}
 
+				for(int i=0;i<4;++i) {
 
+					//Begin depth first search of graph
 
-				//Begin depth first search of graph
+					Iterator<Node> iter = n.getBreadthFirstIterator();
 
-				Iterator <Node> iter = n.getBreadthFirstIterator();
+					iter.next();
 
-				iter.next();
+					Node node = null;
+					//Begin adding child nodes to graph
 
-				Node node = null;
+					while(iter.hasNext())
+					{
+						node = iter.next();
+						//get node URl
 
+						String id = node.getId();
 
+						Document doc = searcher.searchByURL("url", id);
 
-				//Begin adding child nodes to graph
+						if(doc != null) {
 
-				while((node = iter.next()) != null)
+							List<String> childURLs = Arrays.asList(searcher.getChildURLs(doc));
 
-				{
+							//iterate through urls and add any that dont already exist
 
-					//get node URl
+							for(String child: childURLs) {
 
-					String id = node.getId();
+								try{
 
-					Document doc = searcher.searchByURL("url", id);
+									mainGraph.addNode(child);
 
-					if(doc != null) {
+									Node y = mainGraph.getNode(child);
 
-						List<String> childURLs = Arrays.asList(searcher.getChildURLs(doc));
+									//SetName(y, child);
 
-						//iterate through urls and add any that dont already exist
+									y.addAttribute("ui.style","shape:triangle;fill-color:orange;size:15px;");
 
-						for(String child: childURLs) {
+									mainGraph.addEdge((id + child), id, child, true);
 
-							try{
+								}
 
-								mainGraph.addNode(child);
+								catch (IdAlreadyInUseException e){
 
-								Node y = mainGraph.getNode(child);
+									System.out.println("Node " + child + " already made");
 
-								SetName(y, child);
-
-								y.addAttribute("ui.style","shape:triangle;fill-color:orange;size:15px;");
-
-								mainGraph.addEdge((id + child), id, child, true);
-
-							}
-
-							catch (IdAlreadyInUseException e){
-
-								System.out.println("Node " + child + " already made");
+								}
 
 							}
 
 						}
 
 					}
-
 				}
+
+
+
 
 			}
 
