@@ -12,7 +12,7 @@ import org.graphstream.ui.view.Viewer;
 import org.graphstream.ui.view.ViewerListener;
 import org.graphstream.ui.view.ViewerPipe;
 
-import java.awt.*;
+import java.awt.Component;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -23,8 +23,6 @@ import static java.lang.System.exit;
 public class GraphUI implements ViewerListener
 {
     private static final Searcher searcher;
-    private static Point3 clickStart = new Point3(0, 0, 0);
-    private static Point mouseStart = new Point();
 
     static
     {
@@ -66,6 +64,22 @@ public class GraphUI implements ViewerListener
             cam.setViewPercent(zoom);
         });
 
+        ViewerPipe fviews = viewer.newViewerPipe();
+        fviews.addViewerListener(this);
+        fviews.addSink(mainGraph);
+
+        //exit application handlers
+        if (exit)
+        {
+            viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
+            Screen = false;
+        }
+        else
+        {
+            viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.CLOSE_VIEWER);
+            Screen = true;
+        }
+
         //If child graph
         if (exit)
         {
@@ -91,7 +105,7 @@ public class GraphUI implements ViewerListener
             mainGraph.addNode(url);
             Node n = mainGraph.getNode(url);
             SetName(n, ("SEED: " + url));
-            n.addAttribute("ui.style", "shape:circle;fill-color:red;size:" + Math.min(Math.max(children.length / 5, 5), 20) + "px;");
+            n.addAttribute("ui.style", "shape:circle;fill-color:red;size:" + Math.max(children.length / 5, 5) + "px;");
             n.setAttribute("z", 0);
             addChildren(mainGraph, url, children, 1);
             System.out.println("Done loading graph!");
@@ -114,21 +128,6 @@ public class GraphUI implements ViewerListener
             }
         }
 
-        ViewerPipe fviews = viewer.newViewerPipe();
-        fviews.addViewerListener(this);
-        fviews.addSink(mainGraph);
-
-        //exit application handlers
-        if (exit)
-        {
-            viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
-            Screen = false;
-        }
-        else
-        {
-            viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.CLOSE_VIEWER);
-            Screen = true;
-        }
         while (loop)
         {
             fviews.pump();
@@ -171,7 +170,7 @@ public class GraphUI implements ViewerListener
                         //SetName(y, child);
 
                         int numChildren = subChildren.length;
-                        y.addAttribute("ui.style", "shape:triangle;fill-color:" + getColor(numChildren) + ";size:" + Math.min(Math.max(numChildren / 5, 10), 50) + "px;");
+                        y.addAttribute("ui.style", "shape:triangle;fill-color:" + getColor(numChildren) + ";size:" + Math.max(numChildren / 5, 10) + "px;");
 
                         if (mainGraph.getEdge(url + child) == null)
                         {
@@ -195,7 +194,18 @@ public class GraphUI implements ViewerListener
 
     public static String getColor(int numChildren)
     {
-        return numChildren > 20 ? "orange" : "yellow";
+        if (numChildren > 150)
+        {
+            return "#FF5733";
+        }
+        else if (numChildren > 75)
+        {
+            return "orange";
+        }
+        else
+        {
+            return "yellow";
+        }
     }
 
     public static void run()
