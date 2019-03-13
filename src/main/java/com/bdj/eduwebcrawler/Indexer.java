@@ -44,7 +44,7 @@ public class Indexer implements AutoCloseable {
         writer.close();
     }
 
-    public void addDoc(String url, String title, String description, String keywords, List<String> childURLs, String text) throws IOException {
+    public void addDoc(String url, String title, String description, String keywords, Set<String> childURLs, String text) throws IOException {
         //create new document
         Document doc = new Document();
 
@@ -53,8 +53,8 @@ public class Indexer implements AutoCloseable {
         doc.add(new StringField("url", url, StringField.Store.YES));
 
         //child urls
-        for (String temp : childURLs){
-            doc.add(new StringField("childURLs", temp, StringField.Store.YES));
+        for (String urls : childURLs){
+            doc.add(new StringField("childURLs", urls, StringField.Store.YES));
         }
 
         //add text to doc

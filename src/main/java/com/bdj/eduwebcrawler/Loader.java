@@ -9,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class Loader {
@@ -29,10 +31,12 @@ public class Loader {
                     String description = HTMLUtils.getDescription(doc);
                     String keywords = HTMLUtils.getKeywords(doc);
                     String url = EduWebcrawler.getInfoValue(Paths.get(path.toString()+".info"), "url");
-                    List<String> childURLs = new ArrayList<>();
+                    Set<String> childURLs = new HashSet<>();
                     URLUtils.foreachURL(Jsoup.parse(path.toFile(), StandardCharsets.UTF_8.name()), link -> {
                         link = URLUtils.normalizeURL(url, link);
-                        childURLs.add(link);
+                        if (EduWebcrawler.INSTANCE.URL_PREDICATE.test(link)) {
+                            childURLs.add(link);
+                        }
                     });
                     index.addDoc(url, title, description, keywords, childURLs, text);
                 } catch (IOException e) {

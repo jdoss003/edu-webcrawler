@@ -69,9 +69,7 @@ public class Searcher {
         return doc.get("url");
     }
 
-    public String[] getChildURLs(Document doc) {
-        return doc.getValues("childURLs");
-    }
+    public String[] getChildURLs(Document doc) { return doc.getValues("childURLs");}
 
     public Document getDocByDocId(int id) throws IOException {return searcher.doc(id);}
 
