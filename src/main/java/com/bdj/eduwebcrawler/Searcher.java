@@ -1,34 +1,45 @@
 package com.bdj.eduwebcrawler;
 
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.*;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-public class Searcher {
+public class Searcher
+{
     private IndexSearcher searcher;
     private Analyzer analyzer;
     private IndexReader reader;
 
-    public Searcher(String indexDir) throws IOException {
+    public Searcher(String indexDir) throws IOException
+    {
         this(Paths.get(indexDir));
     }
 
-    public Searcher(Path indexDir) throws IOException {
+    public Searcher(Path indexDir) throws IOException
+    {
         //this directory will contain the indexes. FS directory takes Path object
         Directory dir = FSDirectory.open(indexDir);
 
@@ -42,7 +53,8 @@ public class Searcher {
         searcher = new IndexSearcher(reader);
     }
 
-    public Document searchByURL(String key, String url) throws IOException{
+    public Document searchByURL(String key, String url) throws IOException
+    {
         //create query
         Term t = new Term(key, url);
         TermQuery query = new TermQuery(t);
@@ -50,17 +62,21 @@ public class Searcher {
 
         //see if result matches given url. Return document with url else return nothing
         ScoreDoc[] hit = result.scoreDocs;
-        if(hit.length == 0){
+        if (hit.length == 0)
+        {
             return null;
         }
         int docId = hit[0].doc;
         Document d = searcher.doc(docId);
         if (d.get("url").equals(url))
+        {
             return d;
+        }
         return null;
     }
 
-    public ScoreDoc[] queryText(String querystr) throws IOException, ParseException {
+    public ScoreDoc[] queryText(String querystr) throws IOException, ParseException
+    {
         Query q = new QueryParser("text", analyzer).parse(querystr);
         TopDocs result = searcher.search(q, 10);
 
@@ -68,7 +84,8 @@ public class Searcher {
         return result.scoreDocs;
     }
 
-    public String getURL(Document doc) {
+    public String getURL(Document doc)
+    {
         return doc.get("url");
     }
 
@@ -76,7 +93,8 @@ public class Searcher {
 
     public Document getDocByDocId(int id) throws IOException {return searcher.doc(id);}
 
-    public Map<String, Integer> getKeywords(String key, String url) throws IOException{
+    public Map<String, Integer> getKeywords(String key, String url) throws IOException
+    {
         //create query
         Term t = new Term(key, url);
         TermQuery query = new TermQuery(t);
@@ -84,25 +102,25 @@ public class Searcher {
 
         //Get term vector and return top 10 terms in doc
         ScoreDoc[] hit = result.scoreDocs;
-        if(hit.length == 0){
+        if (hit.length == 0)
+        {
             return null;
         }
         int docId = hit[0].doc;
-        return(getKeywordsByDocId(docId));
+        return (getKeywordsByDocId(docId));
     }
 
-    public Map<String, Integer> getKeywordsByDocId(int id) throws IOException {
+    public Map<String, Integer> getKeywordsByDocId(int id) throws IOException
+    {
         Terms tv = reader.getTermVector(id, "text");
         TermsEnum iter = tv.iterator();
         BytesRef ref = null;
         Map<String, Integer> keywords = new HashMap<>();
-        while ((ref = iter.next()) != null){
+        while ((ref = iter.next()) != null)
+        {
             keywords.put(iter.term().utf8ToString(), (int)iter.totalTermFreq());
         }
         //sort hashmap and return top 10 entries
-        return keywords.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(10)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+        return keywords.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).limit(10).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 }

@@ -72,7 +72,7 @@ public enum EduWebcrawler
                 boolean validExtension = extension.trim().isEmpty();
                 if (validTLD && !validExtension)
                 {
-                    for (String ex: config.getValidExtensions())
+                    for (String ex : config.getValidExtensions())
                     {
                         if (extension.equals(ex))
                         {
@@ -83,9 +83,60 @@ public enum EduWebcrawler
                 }
                 return validTLD && validExtension && !s.contains("@");
             }
-            catch (MalformedURLException e) {}
+            catch (MalformedURLException e)
+            {
+            }
             return false;
         };
+    }
+
+    private static String getMD5Hash(byte[] bytes)
+    {
+        try
+        {
+            String pad = String.format("%0" + 30 + "d", 0);
+            MessageDigest digest = MessageDigest.getInstance("md5");
+            String hash = new BigInteger(1, digest.digest(bytes)).toString(16);
+            return (pad + hash).substring(hash.length());
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            // Never gonna happen
+        }
+
+        return "";
+    }
+
+    private static void saveInfo(Path path, String url, byte[] bytes)
+    {
+        try
+        {
+            List<String> list = new ArrayList<>();
+            list.add("url=" + url);
+            list.add("hash=" + getMD5Hash(bytes));
+            Files.write(Paths.get(path.toString() + ".info"), list, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public static String getInfoValue(Path path, String key)
+    {
+        try (Stream<String> lines = Files.lines(path))
+        {
+            Optional<String> keyVal = lines.filter(s -> s.startsWith(key)).findFirst();
+            if (keyVal.isPresent())
+            {
+                return keyVal.get().split("=")[1];
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return "";
     }
 
     public CrawlerConfig getConfig()
@@ -243,27 +294,27 @@ public enum EduWebcrawler
                                 return;
                             }
 
-                           try
-                           {
-                               long start = System.currentTimeMillis();
-                               info.setDoc(Jsoup.parse(Jsoup.connect(info.getUrl()).get().html()));
-                               long end = System.currentTimeMillis();
-                               long total = end - start;
-                               hitTimes.put(domain, new Pair<>(end, total));
-                           }
-                           catch (IOException e)
-                           {
-                               if (DEBUG)
-                               {
-                                   System.out.println("Error getting page: " + info.getUrl());
-                                   System.out.println(e);
-                               }
+                            try
+                            {
+                                long start = System.currentTimeMillis();
+                                info.setDoc(Jsoup.parse(Jsoup.connect(info.getUrl()).get().html()));
+                                long end = System.currentTimeMillis();
+                                long total = end - start;
+                                hitTimes.put(domain, new Pair<>(end, total));
+                            }
+                            catch (IOException e)
+                            {
+                                if (DEBUG)
+                                {
+                                    System.out.println("Error getting page: " + info.getUrl());
+                                    System.out.println(e);
+                                }
 
-                               long end = System.currentTimeMillis();
-                               long total = end - 500L;
-                               hitTimes.put(domain, new Pair<>(end, total));
-                               return;
-                           }
+                                long end = System.currentTimeMillis();
+                                long total = end - 500L;
+                                hitTimes.put(domain, new Pair<>(end, total));
+                                return;
+                            }
                         }
 
                         if (pathList.contains(pathStr))
@@ -284,7 +335,9 @@ public enum EduWebcrawler
                         processors.add(info);
                     }
                 }
-                catch (IOException | IllegalArgumentException  e) {}
+                catch (IOException | IllegalArgumentException e)
+                {
+                }
             });
         }
     }
@@ -324,7 +377,9 @@ public enum EduWebcrawler
                                 downloaders.add(new PageInfo(link, info.getDepth() + 1));
                             }
                         }
-                        catch (IllegalArgumentException e) {}
+                        catch (IllegalArgumentException e)
+                        {
+                        }
                     });
                 }
                 catch (IOException e)
@@ -359,54 +414,5 @@ public enum EduWebcrawler
         }
 
         return (System.currentTimeMillis() - p.fst) < Math.max(p.snd * 3, 250L);
-    }
-
-    private static String getMD5Hash(byte[] bytes)
-    {
-        try
-        {
-            String pad = String.format("%0" + 30 + "d", 0);
-            MessageDigest digest = MessageDigest.getInstance("md5");
-            String hash = new BigInteger(1, digest.digest(bytes)).toString(16);
-            return (pad + hash).substring(hash.length());
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            // Never gonna happen
-        }
-
-        return "";
-    }
-
-    private static void saveInfo(Path path, String url, byte[] bytes)
-    {
-        try
-        {
-            List<String> list = new ArrayList<>();
-            list.add("url=" + url);
-            list.add("hash=" + getMD5Hash(bytes));
-            Files.write(Paths.get(path.toString() + ".info"), list, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    public static String getInfoValue(Path path, String key)
-    {
-        try(Stream<String> lines = Files.lines(path))
-        {
-            Optional<String> keyVal = lines.filter(s -> s.startsWith(key)).findFirst();
-            if (keyVal.isPresent())
-            {
-                return keyVal.get().split("=")[1];
-            }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        return "";
     }
 }

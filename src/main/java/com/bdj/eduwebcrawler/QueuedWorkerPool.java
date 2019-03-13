@@ -24,6 +24,18 @@ public class QueuedWorkerPool<T>
         }
     }
 
+    private static void joinThread(Thread t)
+    {
+        try
+        {
+            t.join();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
     public void add(T item)
     {
         this.queue.add(item);
@@ -76,17 +88,5 @@ public class QueuedWorkerPool<T>
     public void stop()
     {
         this.group.stop();
-    }
-
-    private static void joinThread(Thread t)
-    {
-        try
-        {
-            t.join();
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
     }
 }

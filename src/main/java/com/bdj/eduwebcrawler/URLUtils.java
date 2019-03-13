@@ -19,7 +19,9 @@ public class URLUtils
             int pos = host.lastIndexOf(".", epos - 1);
             return pos != -1 ? host.substring(pos + 1, epos) : host.substring(0, epos);
         }
-        catch (MalformedURLException e) {}
+        catch (MalformedURLException e)
+        {
+        }
         return url;
     }
 
@@ -50,7 +52,9 @@ public class URLUtils
             ret = ret.replaceAll("\\.", "/").replaceAll("//[/]*", "/").replaceAll("/html$", ".html");
             return (ret.endsWith("/txt") ? ret.replaceAll("/txt$", ".txt") : (!ret.endsWith(".html") ? ret + ".html" : ret)).toLowerCase();
         }
-        catch (MalformedURLException e) {}
+        catch (MalformedURLException e)
+        {
+        }
         catch (Throwable t)
         {
             System.out.println("Erroring URL: " + url);
@@ -78,10 +82,14 @@ public class URLUtils
             link = new URL(u, link.trim()).toString();
             int pos = link.indexOf('#');
             if (pos != -1)
+            {
                 link = link.substring(0, pos);
+            }
             pos = link.indexOf('?');
             if (pos != -1)
+            {
                 link = link.substring(0, pos);
+            }
 
             return link;
         }
