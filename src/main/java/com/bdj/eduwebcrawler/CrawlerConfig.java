@@ -34,7 +34,7 @@ public class CrawlerConfig
         String extensions = config.<String>getOptional("valid_extensions").orElseThrow(() -> new RuntimeException("Config missing 'valid_extensions'!"));
         this.validExtensions = Arrays.asList(extensions.split(";"));
         String seeds = config.<String>getOptional("seedlist").orElseThrow(() -> new RuntimeException("Config missing 'seedlist'!"));
-        this.seedList = Arrays.asList(seeds.split("\n"));
+        this.seedList = Arrays.asList(seeds.split(System.lineSeparator()));
 
         if (this.maxPages < 0 && this.maxDataSize < 0)
         {
