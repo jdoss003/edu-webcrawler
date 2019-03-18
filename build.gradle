@@ -24,3 +24,11 @@ dependencies {
     compile "com.electronwill.night-config:toml:${nightconfig_version}"
     compile "net.sf.jopt-simple:jopt-simple:${jopt_version}"
 }
+
+task run(type: JavaExec) {
+    classpath sourceSets.main.runtimeClasspath
+    main "${group_path}.Main"
+    workingDir '.'
+    standardInput = System.in
+    standardOutput = System.out
+}
